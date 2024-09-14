@@ -11,6 +11,4 @@ void main()
     vec3 finalColor = vertColor + _FragmentColors;
 
     FragColor = vec4(finalColor, 1.0);
-
-    //FragColor = Color * sin(_Time);
 } 

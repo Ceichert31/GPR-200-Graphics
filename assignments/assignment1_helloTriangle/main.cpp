@@ -1,3 +1,5 @@
+//Modified by Christopher Eichert
+
 #include <stdio.h>
 #include <math.h>
 
@@ -8,8 +10,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <ShaderLib/Shader.h>
-
-#include <random>
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
@@ -38,6 +38,8 @@ int main() {
 		printf("GLAD Failed to load GL headers");
 		return 1;
 	}
+
+	srand(time(NULL));
 
 	//Create vertex buffer, Element Buffer and vertex array object
 	unsigned int VBO, VAO;
@@ -90,8 +92,10 @@ int main() {
 		//Move to position
 		rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
 
+		float rotationTime = sin(timeValue);
+
 		//Rotation around z-axis
-		rotationMatrix = glm::rotate(rotationMatrix, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+		rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
 
 		//Rotate
 		customShader.setMatrix4("_Rotation", rotationMatrix);
