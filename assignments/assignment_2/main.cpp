@@ -10,24 +10,26 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <ShaderLib/Shader.h>
+
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
 float vertices[]{
-0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  
--0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-0.0f,  0.5f, 0.0f , 0.0f, 0.0f, 1.0f
+0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 1.0f
 };
 
 float texCoords[] = {
 	0.0f, 0.0f,
 	1.0f, 0.0f,
 	0.5f, 1.0f
-}
+};
 
-const int stride = 6;
+const int stride = 8;
 
 int main() {
 	printf("Initializing...");
@@ -68,6 +70,10 @@ int main() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
 
+	//Link UV attributes
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
 	//Unbind Vertex Array and Vertex Buffer objects
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -88,7 +94,7 @@ int main() {
 	glGenTextures(1, &texture);
 
 	//Bind to texture holder
-	glBindTextures(GL_TEXTURE_2D, texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 
 	//Set parameters for texture
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
@@ -104,7 +110,7 @@ int main() {
 
 	if (data) {
 		//Generate image with previously loaded image data
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
 		//Generate mipmap
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -119,6 +125,9 @@ int main() {
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+
+		// bind Texture
+		glBindTexture(GL_TEXTURE_2D, texture);
 
 		//Run Shader program
 		customShader.use();
