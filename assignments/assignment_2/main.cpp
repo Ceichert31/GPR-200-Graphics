@@ -18,15 +18,16 @@ const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
 float vertices[]{
-0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
--0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 1.0f
+	// positions          // colors           // texture coords
+		   0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+		   0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+		  -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+		  -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
 };
 
-float texCoords[] = {
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	0.5f, 1.0f
+unsigned int indices[] = { 
+	  0, 1, 3,
+	  1, 2, 3
 };
 
 const int stride = 8;
@@ -48,19 +49,23 @@ int main() {
 		return 1;
 	}
 
-	srand(time(NULL));
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//Create vertex buffer, Element Buffer and vertex array object
-	unsigned int VBO, VAO;
+	unsigned int VBO, VAO, EBO;
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &EBO);
 
 	//Bind Vertex Array and Vertex Buffer
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
 	//Load data into vertex buffer
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//Link vertex attributes
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
@@ -79,7 +84,10 @@ int main() {
 	glBindVertexArray(0);
 	
 	//Create shader program
-	ShaderLib::Shader customShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+
+	ShaderLib::Shader backgroundShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+
+	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
 	////Set border mode and boder color
 	//float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
@@ -106,11 +114,16 @@ int main() {
 
 	//Load texture image
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load("assets/bass.jpg", &width, &height, &nrChannels, 0);
+
+	//Flip texture
+	stbi_set_flip_vertically_on_load(true);
+
+	//Load texture
+	unsigned char* data = stbi_load("assets/Edward.png", &width, &height, &nrChannels, 0);
 
 	if (data) {
 		//Generate image with previously loaded image data
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 		//Generate mipmap
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -130,7 +143,7 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, texture);
 
 		//Run Shader program
-		customShader.use();
+		fishShader.use();
 
 		//Calculate sin value and get the current uniform information
 		float timeValue = glfwGetTime();
@@ -155,22 +168,22 @@ int main() {
 		rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
 
 		//Rotate
-		customShader.setMatrix4("_Rotation", rotationMatrix);
+		fishShader.setMatrix4("_Rotation", rotationMatrix);
 
 		//Clear framebuffer
 		glClearColor(backgroundColor, backgroundColor, backgroundColor, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Set uniform to our sin value
-		customShader.setFloat("_Time", timeValue);
+		fishShader.setFloat("_Time", timeValue);
 
-		customShader.setVector3("_FragmentColors", fragColorX, fragColorY, fragColorZ);
+		fishShader.setVector3("_FragmentColors", fragColorX, fragColorY, fragColorZ);
 
 		//Bind new Vertex array to update any change
 		glBindVertexArray(VAO);
 
 		//Draw to screen
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		
 		glfwSwapBuffers(window);
 	}
@@ -178,6 +191,7 @@ int main() {
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
 
 	return 0;
 }
