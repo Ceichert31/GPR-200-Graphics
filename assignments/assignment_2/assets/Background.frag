@@ -7,13 +7,10 @@ in vec2 texCoord;
 uniform float _Time;
 uniform vec3 _FragmentColors;
 
-uniform sampler2D ourTexture;
+uniform sampler2D backgroundTexture;
+uniform sampler2D bubbleTexture;
 
 void main()
 {
-    //vec3 finalColor = vertColor + _FragmentColors;
-
-    //FragColor = vec4(finalColor, 1.0);
-
-    FragColor = texture(ourTexture, texCoord);
+    FragColor = texture(backgroundTexture, texCoord);
 } 

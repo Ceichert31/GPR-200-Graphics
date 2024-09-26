@@ -12,14 +12,6 @@ namespace ShaderLib {
 		//Bind to texture holder
 		glBindTexture(GL_TEXTURE_2D, m_id);
 
-		//Set parameters for texture
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-
-		//Mipmap settings
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 		//Load texture image
 		int nrChannels;
 
@@ -27,7 +19,7 @@ namespace ShaderLib {
 		stbi_set_flip_vertically_on_load(true);
 
 		//Load texture
-		unsigned char* data = stbi_load("assets/Edward.png", &m_width, &m_height, &nrChannels, 0);
+		unsigned char* data = stbi_load(filePath, &m_width, &m_height, &nrChannels, 0);
 
 		if (data) {
 
@@ -100,6 +92,7 @@ namespace ShaderLib {
 
 	void Texture2D::Bind(unsigned int slot)
 	{
+		glActiveTexture(slot);
 		glBindTexture(GL_TEXTURE_2D, m_id);
 	}
 }

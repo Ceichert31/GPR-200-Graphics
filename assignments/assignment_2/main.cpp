@@ -15,12 +15,20 @@
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
-float vertices[]{
+float vertices[] = {
 	// positions          // colors           // texture coords
 		   0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
 		   0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
 		  -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
 		  -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+};
+
+float scaleAmount = 2.0f;
+float scalarMatrix[16] = {
+	scaleAmount, 0, 0, 0,
+	0, scaleAmount, 0, 0,
+	0, 0, scaleAmount, 0,
+	0, 0, 0, 1
 };
 
 unsigned int indices[] = { 
@@ -30,13 +38,28 @@ unsigned int indices[] = {
 
 const int stride = 8;
 
+glm::mat4 CalculateRotationMatrix(float timeValue) {
+	//Create matrix
+	glm::mat4 rotationMatrix = glm::mat4(1.0f);
+
+	//Move to position
+	rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+
+	float rotationTime = sin(timeValue);
+
+	//Rotation around z-axis
+	rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
+
+	return rotationMatrix;
+}
+
 int main() {
 	printf("Initializing...");
 	if (!glfwInit()) {
 		printf("GLFW failed to init!");
 		return 1;
 	}
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello Triangle", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello Fish", NULL, NULL);
 	if (window == NULL) {
 		printf("GLFW failed to create window");
 		return 1;
@@ -83,62 +106,55 @@ int main() {
 	
 	//Create shader program
 
-	ShaderLib::Shader backgroundShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	ShaderLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
+
+	ShaderLib::Texture2D backgroundTexture("assets/WaterBackground.png", 1, 1);
 
 	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
 	ShaderLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
+	backgroundShader.use();
+
+	backgroundShader.setMatrix4("_ScalarMatrix", glm::make_mat4x4(scalarMatrix));
+
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		
+		//Clear framebuffer
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		float timeValue = glfwGetTime();
+
+		//Activate shader
+		backgroundShader.use();
+
+		//Set uniforms
+		backgroundShader.setFloat("_Time", timeValue);
+
+		//Background textures
+		backgroundTexture.Bind(0);
+
+		//Render background
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		//Run Shader program
 		fishShader.use();
 
-		// bind Texture
-		fishTexture.Bind(0);
-
-		//Calculate sin value and get the current uniform information
-		float timeValue = glfwGetTime();
-
-		float fragColorX = cos(timeValue);
-
-		float fragColorY = cos(timeValue);
-
-		float fragColorZ = cos(timeValue);
-
-		float backgroundColor = sin(timeValue) + 1;
-
-		//Create matrix
-		glm::mat4 rotationMatrix = glm::mat4(1.0f);
-
-		//Move to position
-		rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-
-		float rotationTime = sin(timeValue);
-
-		//Rotation around z-axis
-		rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
-
 		//Rotate
-		fishShader.setMatrix4("_Rotation", rotationMatrix);
-
-		//Clear framebuffer
-		glClearColor(backgroundColor, backgroundColor, backgroundColor, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		fishShader.setMatrix4("_Rotation", CalculateRotationMatrix(timeValue));
 
 		//Set uniform to our sin value
 		fishShader.setFloat("_Time", timeValue);
 
-		fishShader.setVector3("_FragmentColors", fragColorX, fragColorY, fragColorZ);
-
-		//Bind new Vertex array to update any change
+		// bind Texture
+		fishTexture.Bind(1);
+		
+		//Render fish
 		glBindVertexArray(VAO);
-
-		//Draw to screen
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		
 		glfwSwapBuffers(window);

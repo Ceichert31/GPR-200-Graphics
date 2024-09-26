@@ -18,15 +18,15 @@ uniform mat4 _Rotation;
 
 void main()
 {
-    vec3 pos = aPos;
+    //vec3 pos = aPos;
 
-    pos.x += sin(_Time * _Speed + pos.x) * _Amplitude;
+    //pos.x += sin(_Time * _Speed + pos.x) * _Amplitude;
 
-    pos.y += sin(_Time * _Speed + pos.y) * _Amplitude;
+    //pos.y += sin(_Time * _Speed + pos.y) * _Amplitude;
 
-    pos.z += sin(_Time * _Speed + pos.z) * _Amplitude;
+    //pos.z += sin(_Time * _Speed + pos.z) * _Amplitude;
 
-    gl_Position = _Rotation * vec4(pos.x, pos.y, pos.z, 1.0); // see how we directly give a vec3 to vec4's constructor
+    gl_Position = _ScalarMatrix * vec4(aPos.x, aPos.y, aPos.z, 1.0); // see how we directly give a vec3 to vec4's constructor
 
     vertColor = aColor; 
 
