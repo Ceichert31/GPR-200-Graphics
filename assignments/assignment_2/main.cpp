@@ -9,10 +9,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <ShaderLib/Shader.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../../core/ShaderLib/Shader.h"
+#include "../../core/ShaderLib/Texture2D.h"
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
@@ -89,61 +87,19 @@ int main() {
 
 	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
-	////Set border mode and boder color
-	//float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-	////Set filtering mode
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	//Generate texture holder
-	unsigned int texture;
-	glGenTextures(1, &texture);
-
-	//Bind to texture holder
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	//Set parameters for texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-
-	//Mipmap settings
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	//Load texture image
-	int width, height, nrChannels;
-
-	//Flip texture
-	stbi_set_flip_vertically_on_load(true);
-
-	//Load texture
-	unsigned char* data = stbi_load("assets/Edward.png", &width, &height, &nrChannels, 0);
-
-	if (data) {
-		//Generate image with previously loaded image data
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-		//Generate mipmap
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else {
-		printf("Failed to load texture");
-	}
-
-	//Free data to recover memory
-	stbi_image_free(data);
+	ShaderLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		// bind Texture
-		glBindTexture(GL_TEXTURE_2D, texture);
+		
 
 		//Run Shader program
 		fishShader.use();
+
+		// bind Texture
+		fishTexture.Bind(0);
 
 		//Calculate sin value and get the current uniform information
 		float timeValue = glfwGetTime();
