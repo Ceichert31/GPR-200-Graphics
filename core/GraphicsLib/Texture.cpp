@@ -7,8 +7,9 @@ namespace GraphicsLib {
 
 		//Load texture image
 		int nrChannels;
-		stbi_set_flip_vertically_on_load(true);
-		unsigned char* data = stbi_load(filePath, &m_width, &m_height, &nrChannels, 0);
+		//stbi_set_flip_vertically_on_load(true);
+		unsigned char* data;
+		//= stbi_load(filePath, &m_width, &m_height, &nrChannels, 0);
 
 		if (data) {
 
@@ -68,7 +69,7 @@ namespace GraphicsLib {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapSetting);
 
 			//Free data to recover memory
-			stbi_image_free(data);
+			//stbi_image_free(data);
 		}
 		else {
 			std::cout << "Texture failed to load at path: " << filePath << std::endl;

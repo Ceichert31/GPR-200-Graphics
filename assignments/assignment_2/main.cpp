@@ -50,7 +50,7 @@ int main() {
 		return 1;
 	}
 
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -84,11 +84,13 @@ int main() {
 	glEnableVertexAttribArray(2);
 	
 	//Create shader program
-	GraphicsLib::Shader customShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	GraphicsLib::Shader backgroundShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
-	GraphicsLib::Texture2D bassTexture("assets/Bass.jpg", 1, 1);
+	GraphicsLib::Shader characterShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
-	GraphicsLib::Texture2D flounderTexture("assets/Flounder.jpg", 1, 1);
+	//GraphicsLib::Texture2D bassTexture("assets/Bass.jpg", 1, 1);
+
+	//GraphicsLib::Texture2D flounderTexture("assets/Flounder.jpg", 1, 1);
 
 	//Generate texture holder
 	unsigned int texture1, texture2;
@@ -110,7 +112,7 @@ int main() {
 	unsigned char* data = stbi_load("assets/Flounder.jpg", &width, &height, &nrChannels, 0);
 	
 	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else {
@@ -132,7 +134,7 @@ int main() {
 	data = stbi_load("assets/Flounder.jpg", &width, &height, &nrChannels, 0);
 
 	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else {
@@ -142,15 +144,32 @@ int main() {
 	//Free data to recover memory
 	stbi_image_free(data);
 
+	//Tell openGL for each sampler which texture unit it belongs to
+	backgroundShader.use();
+
+	backgroundShader.setInt("texture1", 0);
+
+	backgroundShader.setInt("texture2", 1);
+
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		//Run Shader program
-		customShader.use();
-
-		//Calculate sin value and get the current uniform information
 		float timeValue = glfwGetTime();
+
+		//Calculate background color
+		float backgroundColor = sin(timeValue) + 1;
+
+		//Clear framebuffer
+		glClearColor(backgroundColor, backgroundColor, backgroundColor, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		//Run bg shader
+		backgroundShader.use();
+
+		//Set bg uniforms
+		//Set uniform to our sin value
+		backgroundShader.setFloat("_Time", timeValue);
 
 		float fragColorX = cos(timeValue);
 
@@ -158,43 +177,38 @@ int main() {
 
 		float fragColorZ = cos(timeValue);
 
-		float backgroundColor = sin(timeValue) + 1;
+		backgroundShader.setVector3("_FragmentColors", fragColorX, fragColorY, fragColorZ);
 
-		//Create matrix
-		glm::mat4 rotationMatrix = glm::mat4(1.0f);
-
-		//Move to position
-		rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-
-		float rotationTime = sin(timeValue);
-
-		//Rotation around z-axis
-		rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
-
-		//Rotate
-		customShader.setMatrix4("_Rotation", rotationMatrix);
-
-		//Clear framebuffer
-		glClearColor(backgroundColor, backgroundColor, backgroundColor, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
+		//Bind bg textures
 		//Render Texture
 		glActiveTexture(GL_TEXTURE0);
-		flounderTexture.Bind();
+		glBindTexture(GL_TEXTURE_2D, texture1);
 
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
-
-		//Set uniform to our sin value
-		customShader.setFloat("_Time", timeValue);
-
-		customShader.setVector3("_FragmentColors", fragColorX, fragColorY, fragColorZ);
-
+		//Draw quad
 		//Bind new Vertex array to update any change
 		glBindVertexArray(VAO);
 
 		//Draw to screen
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		////Rotate
+		//characterShader.setMatrix4("_Rotation", CalculateRotationMatrix(timeValue));
+
+		//
+		//
+
+		//
+
+		//glActiveTexture(GL_TEXTURE1);
+		//glBindTexture(GL_TEXTURE_2D, texture2);
+
+		//
+
+		////Bind new Vertex array to update any change
+		//glBindVertexArray(VAO);
+
+		////Draw to screen
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window);
 	}
@@ -205,4 +219,19 @@ int main() {
 	glDeleteBuffers(1, &EBO);
 
 	return 0;
+}
+
+glm::mat4 CalculateRotationMatrix(float timeValue) {
+	//Create matrix
+	glm::mat4 rotationMatrix = glm::mat4(1.0f);
+
+	//Move to position
+	rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+
+	float rotationTime = sin(timeValue);
+
+	//Rotation around z-axis
+	rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
+
+	return rotationMatrix;
 }
