@@ -9,24 +9,26 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <ShaderLib/Shader.h>
+#include "../../core/GraphicsLib/Shader.h"
+#include "../../core/GraphicsLib/Texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../../core/ew/external/stb_image.h"
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
-float vertices[]{
-0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
--0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 1.0f
+float vertices[] = {
+	// positions          // colors           // texture coords
+	0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, 
+	0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, 
+	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 
+	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f
 };
 
-float texCoords[] = {
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	0.5f, 1.0f
+unsigned int indices[] = {
+	0, 1, 3,
+	1, 2, 3
 };
 
 const int stride = 8;
@@ -48,21 +50,28 @@ int main() {
 		return 1;
 	}
 
-	srand(time(NULL));
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//Create vertex buffer, Element Buffer and vertex array object
-	unsigned int VBO, VAO;
-	glGenBuffers(1, &VBO);
+	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 
-	//Bind Vertex Array and Vertex Buffer
+	//Bind Vertex Array
 	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	//Load data into vertex buffer
+	//Bind and Load data into vertex buffer
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	//Link vertex attributes
+	//Bind and Load data in element buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	//Link position attributes
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -73,46 +82,57 @@ int main() {
 	//Link UV attributes
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
-
-	//Unbind Vertex Array and Vertex Buffer objects
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
 	
 	//Create shader program
-	ShaderLib::Shader customShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	GraphicsLib::Shader customShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
-	////Set border mode and boder color
-	//float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	GraphicsLib::Texture2D bassTexture("assets/Bass.jpg", 1, 1);
 
-	////Set filtering mode
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	GraphicsLib::Texture2D flounderTexture("assets/Flounder.jpg", 1, 1);
 
 	//Generate texture holder
-	unsigned int texture;
-	glGenTextures(1, &texture);
+	unsigned int texture1, texture2;
+	
+	glGenTextures(1, &texture1);
 
-	//Bind to texture holder
-	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindTexture(GL_TEXTURE_2D, texture1);
 
-	//Set parameters for texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-
-	//Mipmap settings
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	//Load texture image
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load("assets/bass.jpg", &width, &height, &nrChannels, 0);
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data = stbi_load("assets/Flounder.jpg", &width, &height, &nrChannels, 0);
+	
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		printf("Failed to load texture");
+	}
+
+	//Free data to recover memory
+	stbi_image_free(data);
+
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	data = stbi_load("assets/Flounder.jpg", &width, &height, &nrChannels, 0);
 
 	if (data) {
-		//Generate image with previously loaded image data
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-		//Generate mipmap
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else {
@@ -125,9 +145,6 @@ int main() {
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
-
-		// bind Texture
-		glBindTexture(GL_TEXTURE_2D, texture);
 
 		//Run Shader program
 		customShader.use();
@@ -161,6 +178,13 @@ int main() {
 		glClearColor(backgroundColor, backgroundColor, backgroundColor, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		//Render Texture
+		glActiveTexture(GL_TEXTURE0);
+		flounderTexture.Bind();
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
 		//Set uniform to our sin value
 		customShader.setFloat("_Time", timeValue);
 
@@ -170,14 +194,15 @@ int main() {
 		glBindVertexArray(VAO);
 
 		//Draw to screen
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 		glfwSwapBuffers(window);
 	}
 	printf("Shutting down...");
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
 
 	return 0;
 }

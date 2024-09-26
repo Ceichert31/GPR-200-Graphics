@@ -12,7 +12,7 @@
 #include <glm/matrix.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace ShaderLib {
+namespace GraphicsLib {
     class Shader
     {
     public:
