@@ -1,30 +1,40 @@
-#include "Texture.h"
+#include "Texture2D.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../ew/external/stb_image.h"
 
 namespace GraphicsLib {
 	Texture2D::Texture2D(const char* filePath, int filterMode, int wrapMode)
 	{
+		//Generate texture holder
 		glGenTextures(1, &m_id);
+
+		//Bind to texture holder
+		glBindTexture(GL_TEXTURE_2D, m_id);
 
 		//Load texture image
 		int nrChannels;
-		//stbi_set_flip_vertically_on_load(true);
-		unsigned char* data;
-		//= stbi_load(filePath, &m_width, &m_height, &nrChannels, 0);
+
+		//Flip texture
+		stbi_set_flip_vertically_on_load(true);
+
+		//Load texture
+		unsigned char* data = stbi_load(filePath, &m_width, &m_height, &nrChannels, 0);
 
 		if (data) {
 
-			GLenum renderFormat; 
+			GLenum renderFormat;
 			switch (nrChannels)
 			{
-				case 1:
-					renderFormat = GL_RED;
-					break;
-				case 3: 
-					renderFormat = GL_RGB;
-					break;
-				case 4:
-					renderFormat = GL_RGBA;
-					break;
+			case 1:
+				renderFormat = GL_RED;
+				break;
+			case 3:
+				renderFormat = GL_RGB;
+				break;
+			case 4:
+				renderFormat = GL_RGBA;
+				break;
 			}
 
 			GLenum filterSetting;
@@ -69,7 +79,7 @@ namespace GraphicsLib {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapSetting);
 
 			//Free data to recover memory
-			//stbi_image_free(data);
+			stbi_image_free(data);
 		}
 		else {
 			std::cout << "Texture failed to load at path: " << filePath << std::endl;
@@ -82,6 +92,7 @@ namespace GraphicsLib {
 
 	void Texture2D::Bind(unsigned int slot)
 	{
+		glActiveTexture(slot);
 		glBindTexture(GL_TEXTURE_2D, m_id);
 	}
 }

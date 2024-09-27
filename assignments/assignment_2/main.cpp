@@ -10,8 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../../core/ShaderLib/Shader.h"
-#include "../../core/ShaderLib/Texture2D.h"
+#include "../../core/GraphicsLib/Shader.h"
+#include "../../core/GraphicsLib/Texture2D.h"
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
@@ -105,16 +105,16 @@ int main() {
 	glEnableVertexAttribArray(2);
 	
 	//Create shaders
-	ShaderLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
+	GraphicsLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
 
-	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	GraphicsLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
 	//Create textures
-	ShaderLib::Texture2D backgroundTexture("assets/WaterBackground.png", 1, 1);
+	GraphicsLib::Texture2D backgroundTexture("assets/WaterBackground.png", 1, 1);
 
-	ShaderLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 1, 1);
+	GraphicsLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 1, 1);
 
-	ShaderLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
+	GraphicsLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
 	backgroundShader.use();
 
@@ -159,7 +159,7 @@ int main() {
 		//Set uniform to our sin value
 		fishShader.setFloat("_Time", timeValue);
 
-		fishShader.setInt("ourTexture", 2);
+		fishShader.setInt("fishTexture", 2);
 
 		// bind Texture
 		fishTexture.Bind(GL_TEXTURE2);
@@ -177,20 +177,4 @@ int main() {
 	glDeleteBuffers(1, &EBO);
 
 	return 0;
-}
-}
-
-glm::mat4 CalculateRotationMatrix(float timeValue) {
-	//Create matrix
-	glm::mat4 rotationMatrix = glm::mat4(1.0f);
-
-	//Move to position
-	rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-
-	float rotationTime = sin(timeValue);
-
-	//Rotation around z-axis
-	rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
-
-	return rotationMatrix;
 }

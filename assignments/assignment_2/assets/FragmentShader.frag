@@ -12,10 +12,5 @@ uniform sampler2D flounderTexture;
 
 void main()
 {
-    //vec3 finalColor = vertColor + _FragmentColors;
-
-    //FragColor = vec4(finalColor, 1.0);
-
-   FragColor = mix(texture(fishTexture, texCoord), texture(flounderTexture, texCoord), 0.2);
-
+   FragColor = texture(fishTexture, texCoord);
 } 

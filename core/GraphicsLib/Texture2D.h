@@ -13,7 +13,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "../ew/external/glad.h"
 
-namespace ShaderLib {
+namespace GraphicsLib {
     class Texture2D {
     public:
         Texture2D(const char* filePath, int filterMode, int wrapMode);
