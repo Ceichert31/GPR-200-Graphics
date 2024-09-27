@@ -108,13 +108,18 @@ int main() {
 
 	ShaderLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
 
+	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+
 	ShaderLib::Texture2D backgroundTexture("assets/WaterBackground.png", 1, 1);
 
-	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	ShaderLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 1, 1);
 
 	ShaderLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
 	backgroundShader.use();
+
+	backgroundShader.setInt("backgroundTexture", 0);
+	backgroundShader.setInt("bubbleTexture", 1);
 
 	backgroundShader.setMatrix4("_ScalarMatrix", glm::make_mat4x4(scalarMatrix));
 
@@ -134,8 +139,12 @@ int main() {
 		//Set uniforms
 		backgroundShader.setFloat("_Time", timeValue);
 
+		backgroundShader.setInt("backgroundTexture", 0);
+		backgroundShader.setInt("bubbleTexture", 1);
+
 		//Background textures
 		backgroundTexture.Bind(0);
+		bubbleTexture.Bind(1);
 
 		//Render background
 		glBindVertexArray(VAO);
@@ -150,8 +159,10 @@ int main() {
 		//Set uniform to our sin value
 		fishShader.setFloat("_Time", timeValue);
 
+		fishShader.setInt("ourShader", 2);
+
 		// bind Texture
-		fishTexture.Bind(1);
+		fishTexture.Bind(2);
 		
 		//Render fish
 		glBindVertexArray(VAO);
