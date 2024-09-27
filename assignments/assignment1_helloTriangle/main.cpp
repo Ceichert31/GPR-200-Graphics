@@ -66,7 +66,7 @@ int main() {
 	glBindVertexArray(0);
 	
 	//Create shader program
-	ShaderLib::Shader customShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	GraphicsLib::Shader customShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {

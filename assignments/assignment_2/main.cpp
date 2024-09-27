@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 #include "../../core/ShaderLib/Shader.h"
 #include "../../core/ShaderLib/Texture2D.h"
 
@@ -34,7 +35,7 @@ float scalarMatrix[16] = {
 unsigned int indices[] = { 
 	  0, 1, 3,
 	  1, 2, 3
-};
+  };
 
 const int stride = 8;
 
@@ -69,7 +70,7 @@ int main() {
 		printf("GLAD Failed to load GL headers");
 		return 1;
 	}
-
+  
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -79,16 +80,19 @@ int main() {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &EBO);
 
-	//Bind Vertex Array and Vertex Buffer
+	//Bind Vertex Array
 	glBindVertexArray(VAO);
+  
+	//Bind and Load data into vertex buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-	//Load data into vertex buffer
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	//Link vertex attributes
+	//Bind and Load data in element buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	//Link position attributes
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -99,10 +103,6 @@ int main() {
 	//Link UV attributes
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
-
-	//Unbind Vertex Array and Vertex Buffer objects
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
 	
 	//Create shaders
 	ShaderLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
@@ -132,7 +132,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		float timeValue = glfwGetTime();
-
+    
 		//Activate shader
 		backgroundShader.use();
 
@@ -177,4 +177,20 @@ int main() {
 	glDeleteBuffers(1, &EBO);
 
 	return 0;
+}
+}
+
+glm::mat4 CalculateRotationMatrix(float timeValue) {
+	//Create matrix
+	glm::mat4 rotationMatrix = glm::mat4(1.0f);
+
+	//Move to position
+	rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+
+	float rotationTime = sin(timeValue);
+
+	//Rotation around z-axis
+	rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
+
+	return rotationMatrix;
 }

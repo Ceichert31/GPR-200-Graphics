@@ -7,7 +7,8 @@ in vec2 texCoord;
 uniform float _Time;
 uniform vec3 _FragmentColors;
 
-uniform sampler2D ourTexture;
+uniform sampler2D fishTexture;
+uniform sampler2D flounderTexture;
 
 void main()
 {
@@ -15,5 +16,6 @@ void main()
 
     //FragColor = vec4(finalColor, 1.0);
 
-    FragColor = texture(ourTexture, texCoord);
+   FragColor = mix(texture(fishTexture, texCoord), texture(flounderTexture, texCoord), 0.2);
+
 } 

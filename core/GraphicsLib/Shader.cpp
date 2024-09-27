@@ -1,29 +1,26 @@
 #include "Shader.h"
-#include "../ew/external/glad.h"	
+#include "../ew/external/glad.h"
 
-using namespace std;
-
-
-namespace ShaderLib {
+namespace GraphicsLib {
 
 	Shader::Shader(const char* vertexPath, const char* fragmentPath) {
 
 		//Source code
-		string vertexBuffer, fragmentBuffer;
+		std::string vertexBuffer, fragmentBuffer;
 
 		//Files to read from
-		ifstream vertShaderFile;
-		ifstream fragShaderFile;
+		std::ifstream vertShaderFile;
+		std::ifstream fragShaderFile;
 
 		//ifstream exceptions
-		vertShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
-		fragShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
+		vertShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		fragShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		try {
 			vertShaderFile.open(vertexPath);
 			fragShaderFile.open(fragmentPath);
 
-			stringstream vertStream, fragStream;
+			std::stringstream vertStream, fragStream;
 
 			//Output to string stream
 			vertStream << vertShaderFile.rdbuf();
@@ -37,8 +34,8 @@ namespace ShaderLib {
 			vertexBuffer = vertStream.str();
 			fragmentBuffer = fragStream.str();
 		}
-		catch (ifstream::failure e) {
-			cout << "ERROR:SHADER:FILE_NOT_SUCCESFULLY_READ" << endl;
+		catch (std::ifstream::failure e) {
+			std::cout << "ERROR:SHADER:FILE_NOT_SUCCESFULLY_READ" << std::endl;
 		}
 
 		//Convert from buffer to c-string
@@ -67,7 +64,7 @@ namespace ShaderLib {
 		//If failed, print logs
 		if (!success) {
 			glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-			cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << infoLog << endl;
+			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << infoLog << std::endl;
 		}
 
 		//Assign fragment shader
@@ -85,7 +82,7 @@ namespace ShaderLib {
 		//If failed, print logs
 		if (!success) {
 			glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-			cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << infoLog << endl;
+			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << infoLog << std::endl;
 		}
 
 		//Assign program ID
@@ -104,7 +101,7 @@ namespace ShaderLib {
 		//If failed, print logs
 		if (!success) {
 			glGetProgramInfoLog(ID, 512, NULL, infoLog);
-			cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED" << infoLog << endl;
+			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED" << infoLog << std::endl;
 		}
 
 		//Deallocate shaders
@@ -117,7 +114,7 @@ namespace ShaderLib {
 		glUseProgram(ID);
 	}
 
-	void Shader::setBool(const string& name, bool value) const {
+	void Shader::setBool(const std::string& name, bool value) const {
 		glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
 	}
 
