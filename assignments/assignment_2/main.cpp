@@ -110,9 +110,9 @@ int main() {
 	GraphicsLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
 	//Create textures
-	GraphicsLib::Texture2D backgroundTexture("assets/WaterBackground.png", 1, 1);
+	GraphicsLib::Texture2D backgroundTexture("assets/WaterBackground.png", 2, 1);
 
-	GraphicsLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 1, 1);
+	GraphicsLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 3, 1);
 
 	GraphicsLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
