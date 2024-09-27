@@ -12,5 +12,5 @@ uniform sampler2D bubbleTexture;
 
 void main()
 {
-    FragColor = mix(texture(backgroundTexture, texCoord), texture(bubbleTexture, texCoord), 0.8);
+    FragColor = mix(texture(backgroundTexture, texCoord), texture(bubbleTexture, texCoord), 0.2);
 } 

@@ -104,12 +104,12 @@ int main() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	
-	//Create shader program
-
+	//Create shaders
 	ShaderLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
 
 	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
+	//Create textures
 	ShaderLib::Texture2D backgroundTexture("assets/WaterBackground.png", 1, 1);
 
 	ShaderLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 1, 1);
@@ -143,8 +143,8 @@ int main() {
 		backgroundShader.setInt("bubbleTexture", 1);
 
 		//Background textures
-		backgroundTexture.Bind(0);
-		bubbleTexture.Bind(1);
+		backgroundTexture.Bind(GL_TEXTURE0);
+		bubbleTexture.Bind(GL_TEXTURE1);
 
 		//Render background
 		glBindVertexArray(VAO);
@@ -159,10 +159,10 @@ int main() {
 		//Set uniform to our sin value
 		fishShader.setFloat("_Time", timeValue);
 
-		fishShader.setInt("ourShader", 2);
+		fishShader.setInt("ourTexture", 2);
 
 		// bind Texture
-		fishTexture.Bind(2);
+		fishTexture.Bind(GL_TEXTURE2);
 		
 		//Render fish
 		glBindVertexArray(VAO);

@@ -11,7 +11,7 @@ uniform mat4 _ScalarMatrix;
 uniform vec3 _Color;
 
 uniform float _Time;
-uniform float _Speed = 2;
+uniform float _Speed = 0.5;
 uniform float _Amplitude = 0.3;
 
 uniform mat4 _Rotation;
@@ -30,5 +30,5 @@ void main()
 
     vertColor = aColor; 
 
-    texCoord = aTexCoord;
+    texCoord = vec2(aTexCoord.x + _Time, aTexCoord.y);
 }
