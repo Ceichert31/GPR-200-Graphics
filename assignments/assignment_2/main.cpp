@@ -9,29 +9,50 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "../../core/GraphicsLib/Shader.h"
-#include "../../core/GraphicsLib/Texture.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "../../core/ew/external/stb_image.h"
+#include "../../core/ShaderLib/Shader.h"
+#include "../../core/ShaderLib/Texture2D.h"
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
 float vertices[] = {
 	// positions          // colors           // texture coords
-	0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, 
-	0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, 
-	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 
-	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f
+		   0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+		   0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+		  -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+		  -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
 };
 
-unsigned int indices[] = {
-	0, 1, 3,
-	1, 2, 3
+float scaleAmount = 2.0f;
+float scalarMatrix[16] = {
+	scaleAmount, 0, 0, 0,
+	0, scaleAmount, 0, 0,
+	0, 0, scaleAmount, 0,
+	0, 0, 0, 1
 };
+
+unsigned int indices[] = { 
+	  0, 1, 3,
+	  1, 2, 3
+  };
 
 const int stride = 8;
+
+glm::mat4 CalculateRotationMatrix(float timeValue) {
+	//Create matrix
+	glm::mat4 rotationMatrix = glm::mat4(1.0f);
+
+	//Move to position
+	rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+
+	float rotationTime = sin(timeValue);
+
+	//Rotation around z-axis
+	rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 2.0f));
+
+	return rotationMatrix;
+}
 
 int main() {
 	printf("Initializing...");
@@ -39,7 +60,7 @@ int main() {
 		printf("GLFW failed to init!");
 		return 1;
 	}
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello Triangle", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hello Fish", NULL, NULL);
 	if (window == NULL) {
 		printf("GLFW failed to create window");
 		return 1;
@@ -49,23 +70,23 @@ int main() {
 		printf("GLAD Failed to load GL headers");
 		return 1;
 	}
-
-	//glEnable(GL_DEPTH_TEST);
+  
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//Create vertex buffer, Element Buffer and vertex array object
 	unsigned int VBO, VAO, EBO;
-	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
+	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &EBO);
 
 	//Bind Vertex Array
 	glBindVertexArray(VAO);
-
+  
 	//Bind and Load data into vertex buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//Bind and Load data in element buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -83,133 +104,70 @@ int main() {
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	
-	//Create shader program
-	GraphicsLib::Shader backgroundShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	//Create shaders
+	ShaderLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
 
-	GraphicsLib::Shader characterShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	ShaderLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
-	//GraphicsLib::Texture2D bassTexture("assets/Bass.jpg", 1, 1);
+	//Create textures
+	ShaderLib::Texture2D backgroundTexture("assets/WaterBackground.png", 1, 1);
 
-	//GraphicsLib::Texture2D flounderTexture("assets/Flounder.jpg", 1, 1);
+	ShaderLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 1, 1);
 
-	//Generate texture holder
-	unsigned int texture1, texture2;
-	
-	glGenTextures(1, &texture1);
+	ShaderLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
-	glBindTexture(GL_TEXTURE_2D, texture1);
-
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	//Load texture image
-	int width, height, nrChannels;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char* data = stbi_load("assets/Flounder.jpg", &width, &height, &nrChannels, 0);
-	
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else {
-		printf("Failed to load texture");
-	}
-
-	//Free data to recover memory
-	stbi_image_free(data);
-
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	data = stbi_load("assets/Flounder.jpg", &width, &height, &nrChannels, 0);
-
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else {
-		printf("Failed to load texture");
-	}
-
-	//Free data to recover memory
-	stbi_image_free(data);
-
-	//Tell openGL for each sampler which texture unit it belongs to
 	backgroundShader.use();
 
-	backgroundShader.setInt("texture1", 0);
+	backgroundShader.setInt("backgroundTexture", 0);
+	backgroundShader.setInt("bubbleTexture", 1);
 
-	backgroundShader.setInt("texture2", 1);
+	backgroundShader.setMatrix4("_ScalarMatrix", glm::make_mat4x4(scalarMatrix));
 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		float timeValue = glfwGetTime();
-
-		//Calculate background color
-		float backgroundColor = sin(timeValue) + 1;
-
 		//Clear framebuffer
-		glClearColor(backgroundColor, backgroundColor, backgroundColor, 1.0f);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Run bg shader
+		float timeValue = glfwGetTime();
+    
+		//Activate shader
 		backgroundShader.use();
 
-		//Set bg uniforms
-		//Set uniform to our sin value
+		//Set uniforms
 		backgroundShader.setFloat("_Time", timeValue);
 
-		float fragColorX = cos(timeValue);
+		backgroundShader.setInt("backgroundTexture", 0);
+		backgroundShader.setInt("bubbleTexture", 1);
 
-		float fragColorY = cos(timeValue);
+		//Background textures
+		backgroundTexture.Bind(GL_TEXTURE0);
+		bubbleTexture.Bind(GL_TEXTURE1);
 
-		float fragColorZ = cos(timeValue);
-
-		backgroundShader.setVector3("_FragmentColors", fragColorX, fragColorY, fragColorZ);
-
-		//Bind bg textures
-		//Render Texture
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-
-		//Draw quad
-		//Bind new Vertex array to update any change
+		//Render background
 		glBindVertexArray(VAO);
-
-		//Draw to screen
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-		////Rotate
-		//characterShader.setMatrix4("_Rotation", CalculateRotationMatrix(timeValue));
+		//Run Shader program
+		fishShader.use();
 
-		//
-		//
+		//Rotate
+		fishShader.setMatrix4("_Rotation", CalculateRotationMatrix(timeValue));
 
-		//
+		//Set uniform to our sin value
+		fishShader.setFloat("_Time", timeValue);
 
-		//glActiveTexture(GL_TEXTURE1);
-		//glBindTexture(GL_TEXTURE_2D, texture2);
+		fishShader.setInt("ourTexture", 2);
 
-		//
-
-		////Bind new Vertex array to update any change
-		//glBindVertexArray(VAO);
-
-		////Draw to screen
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+		// bind Texture
+		fishTexture.Bind(GL_TEXTURE2);
+		
+		//Render fish
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		
 		glfwSwapBuffers(window);
 	}
 	printf("Shutting down...");
@@ -219,6 +177,7 @@ int main() {
 	glDeleteBuffers(1, &EBO);
 
 	return 0;
+}
 }
 
 glm::mat4 CalculateRotationMatrix(float timeValue) {
