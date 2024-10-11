@@ -13,12 +13,24 @@
 #include "../../core/GraphicsLib/Shader.h"
 #include "../../core/GraphicsLib/Texture2D.h"
 
+void mouse_callback(GLFWwindow* window, double posX, double posY);
+void scroll_callback(GLFWwindow* window, double offsetX, double offsetY);
+void processInput(GLFWwindow* window);
+
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 const float NEAR_PLANE = 0.1f;
 const float FAR_PLANE = 1000.0f;
 
-const float FIELD_OF_VIEW = 45.0f;
+float fieldOfView = 60.0f;
+
+const float SENSITIVITY = 0.1f;
+
+const float CAMERA_SPEED = 5.0f;
+
+const float PITCH_CONSTRAINT = 89.0f;
+
+const int MAX_CUBES = 20;
 
 //Set camera position
 glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -29,17 +41,16 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 //Set camera target
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+//Last input mouse position
+float lastPosX = SCREEN_WIDTH / 2.0f;
+float lastPosY = SCREEN_HEIGHT / 2.0f;
+
 //Delta time 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-//float vertices[] = {
-//	// positions          // colors           // texture coords
-//		   0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-//		   0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-//		  -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-//		  -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
-//};
+float yaw = -90.0f;
+float pitch = 0;
 
 float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -85,18 +96,7 @@ float vertices[] = {
 	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-glm::vec3 cubePositions[] = {
-	glm::vec3(0.0f,  0.0f,  0.0f),
-	glm::vec3(2.0f,  5.0f, -15.0f),
-	glm::vec3(-1.5f, -2.2f, -2.5f),
-	glm::vec3(-3.8f, -2.0f, -12.3f),
-	glm::vec3(2.4f, -0.4f, -3.5f),
-	glm::vec3(-1.7f,  3.0f, -7.5f),
-	glm::vec3(1.3f, -2.0f, -2.5f),
-	glm::vec3(1.5f,  2.0f, -2.5f),
-	glm::vec3(1.5f,  0.2f, -1.5f),
-	glm::vec3(-1.3f,  1.0f, -1.5f)
-};
+glm::vec3 cubePositions[MAX_CUBES];
 
 float scaleAmount = 2.0f;
 float scalarMatrix[16] = {
@@ -106,55 +106,8 @@ float scalarMatrix[16] = {
 	0, 0, 0, 1
 };
 
-//unsigned int indices[] = { 
-//	  0, 1, 3,
-//	  1, 2, 3
-//  };
-
 const int stride = 5;
 
-glm::mat4 CalculateRotationMatrix(float timeValue) {
-	//Create matrix
-	glm::mat4 rotationMatrix = glm::mat4(1.0f);
-
-	//Move to position
-	rotationMatrix = glm::translate(rotationMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-
-	float rotationTime = timeValue;
-
-	//Rotation around z-axis
-	rotationMatrix = glm::rotate(rotationMatrix, rotationTime, glm::vec3(0.0f, 0.0f, 1.0f));
-
-	return rotationMatrix;
-}
-
-const float CAMERA_SPEED = 5.0f;
-
-void processInput(GLFWwindow* window)
-{
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
-	float cameraSpeed = CAMERA_SPEED * deltaTime;
-
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
-		cameraSpeed *= 2.0f;
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPosition += cameraSpeed * cameraFront;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPosition -= cameraSpeed * cameraFront;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
-	//Up and down inputs
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-		cameraPosition += cameraUp * cameraSpeed;
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-		cameraPosition -= cameraUp * cameraSpeed;
-}
 
 int main() {
 	printf("Initializing...");
@@ -176,23 +129,28 @@ int main() {
 	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	//Setup Orthographic projection
 	glm::ortho(0.0f, (float)SCREEN_WIDTH, 0.0f, (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
 
 	//Cache perspective projection
-	glm::mat4 perspectiveView = glm::perspective(glm::radians(FIELD_OF_VIEW), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
-
-	//Rotate plane
-	//glm::mat4 model = glm::mat4(1.0f);
-	//model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-	////Move camera backwards
-	//glm::mat4 viewModel = glm::mat4(1.0f);
-	//viewModel = glm::translate(viewModel, glm::vec3(0.0f, 0.0f, -3.0f));
+	glm::mat4 perspectiveView = glm::perspective(glm::radians(fieldOfView), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
 
 	glm::mat4 projectionMatrix;
-	projectionMatrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
+	projectionMatrix = glm::perspective(glm::radians(fieldOfView), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
+
+	//Set callback for inputs
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	int maxCubeRange = 20;
+	//Generate random positions for cubes
+	for (int i = 0; i < 20; i++) {
+		glm::vec3 newPos = glm::vec3(ew::RandomRange(0, maxCubeRange), ew::RandomRange(0, maxCubeRange), ew::RandomRange(0, maxCubeRange));
+
+		cubePositions[i] = newPos;
+	}
 
 	//Create vertex buffer, Element Buffer and vertex array object
 	unsigned int VBO, VAO, EBO;
@@ -221,23 +179,14 @@ int main() {
 	glEnableVertexAttribArray(1);
 	
 	//Create shaders
-	GraphicsLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
+	//GraphicsLib::Shader backgroundShader("assets/Background.vert", "assets/Background.frag");
 
 	GraphicsLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 
 	//Create textures
-	GraphicsLib::Texture2D backgroundTexture("assets/WaterBackground.png", 2, 1);
+	GraphicsLib::Texture2D waterTexture("assets/WaterBackground.png", 2, 1);
 
-	GraphicsLib::Texture2D bubbleTexture("assets/BubbleBackground.png", 3, 1);
-
-	GraphicsLib::Texture2D fishTexture("assets/WaterBackground.png", 1, 1);
-
-	backgroundShader.use();
-
-	backgroundShader.setInt("backgroundTexture", 0);
-	backgroundShader.setInt("bubbleTexture", 1);
-
-	backgroundShader.setMatrix4("_ScalarMatrix", glm::make_mat4x4(scalarMatrix));
+	GraphicsLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
 	const float radius = 10.0f;
 
@@ -256,33 +205,15 @@ int main() {
 		deltaTime = timeValue - lastFrame;
 		lastFrame = timeValue;
     
-		//Activate shader
-		//backgroundShader.use();
-
-		//Set uniforms
-		//backgroundShader.setFloat("_Time", timeValue);
-
-		//backgroundShader.setInt("backgroundTexture", 0);
-		//backgroundShader.setInt("bubbleTexture", 1);
-
-		//Background textures
-		//backgroundTexture.Bind(GL_TEXTURE0);
-		//bubbleTexture.Bind(GL_TEXTURE1);
-
-		//Render background
-		//glBindVertexArray(VAO);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 		//Run Shader program
 		fishShader.use();
 
-		//Calculate direction based on target and position
-		glm::vec3 cameraDirection = glm::normalize(cameraPosition - cameraDirection);
+		//Update shader with new projection matrix
+		glm::mat4 projectionMatrix;
+		projectionMatrix = glm::perspective(glm::radians(fieldOfView), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
+		fishShader.setMatrix4("_Projection", projectionMatrix);
 
-		//Calculate camera right and camera up
-		//glm::vec3 cameraRight = glm::normalize(glm::cross(upVector, cameraDirection));
-		//glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
-
+		//Rotate camera to lookat foward position
 		glm::mat4 view;
 		view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 
@@ -293,15 +224,17 @@ int main() {
 		//Set uniform to our sin value
 		fishShader.setFloat("_Time", timeValue);
 
-		fishShader.setInt("fishTexture", 2);
-
+		fishShader.setInt("fishTexture", 0);
 		// bind Texture
-		fishTexture.Bind(GL_TEXTURE2);
+		fishTexture.Bind(GL_TEXTURE0);
+
+		fishShader.setInt("waterTexture", 1);
+		waterTexture.Bind(GL_TEXTURE1);
 		
 		//Render fish
 		glBindVertexArray(VAO);
 		//Iterate through cube positions and move each to designated position
-		for (unsigned int i = 0; i < 10; i++) {
+		for (unsigned int i = 0; i < MAX_CUBES; i++) {
 			//Create identy matrix
 			glm::mat4 model = glm::mat4(1.0f);
 
@@ -309,7 +242,7 @@ int main() {
 			model = glm::translate(model, cubePositions[i]);
 			
 			//Determine angle
-			float angle = (20.0f * i) * timeValue;
+			float angle = ((20.0f * i) + 1) * timeValue;
 
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 
@@ -317,9 +250,6 @@ int main() {
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-		
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		
 		glfwSwapBuffers(window);
 	}
 	printf("Shutting down...");
@@ -329,4 +259,80 @@ int main() {
 	glDeleteBuffers(1, &EBO);
 
 	return 0;
+}
+
+void processInput(GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	float cameraSpeed = CAMERA_SPEED * deltaTime;
+
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+		cameraSpeed *= 2.0f;
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPosition += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPosition -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+	//Up and down inputs
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		cameraPosition += cameraUp * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		cameraPosition -= cameraUp * cameraSpeed;
+}
+
+bool firstMouse = true;
+
+void mouse_callback(GLFWwindow* window, double posX, double posY) {
+
+	if (firstMouse) {
+		lastPosX = posX;
+		lastPosY = posY;
+		firstMouse = false;
+	}
+
+	//Calculate offset
+	float offsetX = posX - lastPosX;
+	float offsetY = lastPosY - posY;
+
+	//Cache current position
+	lastPosX = posX;
+	lastPosY = posY;
+
+	//Increase value by sensitivity
+	offsetX *= SENSITIVITY;
+	offsetY *= SENSITIVITY;
+
+	yaw += offsetX;
+	pitch += offsetY;
+
+	//Clamp pitch
+	if (pitch > PITCH_CONSTRAINT)
+		pitch = PITCH_CONSTRAINT;
+	if (pitch < -PITCH_CONSTRAINT)
+		pitch = -PITCH_CONSTRAINT;
+
+	//Calculate camera rotation
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+	//Normalize and set camera front to direction
+	cameraFront = glm::normalize(direction);
+}
+
+void scroll_callback(GLFWwindow* window, double offsetX, double offsetY) {
+	fieldOfView -= offsetY;
+
+	if (fieldOfView < 1.0f)
+		fieldOfView = 1.0f;
+	if (fieldOfView > 60.0f)
+		fieldOfView = 60.0f;
 }

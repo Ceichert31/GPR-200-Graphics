@@ -63,6 +63,8 @@ void main()
 
     //pos.z += sin(_Time * _Speed + pos.z) * _Amplitude;
 
+    //pos = Scale(sin(_Time) * 3, sin(_Time) * 3, sin(_Time) * 3) * pos;
+
     gl_Position = _Projection * _View * _Model * pos; // see how we directly give a vec3 to vec4's constructor
 
     texCoord = aTexCoord;
