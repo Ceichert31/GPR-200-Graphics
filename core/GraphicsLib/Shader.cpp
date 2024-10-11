@@ -138,5 +138,6 @@ namespace GraphicsLib {
 	void Shader::setMatrix4(const std::string& name, glm::mat4 matrix) const
 	{
 		glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
+		//&value[0][0]
 	}
 }
