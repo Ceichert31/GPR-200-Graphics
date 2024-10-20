@@ -37,7 +37,7 @@ unsigned int indices[] = {
 	  1, 2, 3
   };
 
-const int stride = 8;
+const int STRIDE = 8;
 
 glm::mat4 CalculateRotationMatrix(float timeValue) {
 	//Create matrix
@@ -93,15 +93,15 @@ int main() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//Link position attributes
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	//Link color attributes
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(3*sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	//Link UV attributes
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	
 	//Create shaders

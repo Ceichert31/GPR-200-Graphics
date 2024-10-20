@@ -20,7 +20,7 @@ float vertices[]{
 0.0f,  0.5f, 0.0f , 0.0f, 0.0f, 1.0f
 };
 
-const int stride = 6;
+const int STRIDE = 6;
 
 int main() {
 	printf("Initializing...");
@@ -54,11 +54,11 @@ int main() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	//Link vertex attributes
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	//Link color attributes
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(3*sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	//Unbind Vertex Array and Vertex Buffer objects

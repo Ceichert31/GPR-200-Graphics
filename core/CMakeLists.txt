@@ -15,7 +15,7 @@ set(CORE_INC_DIR
  CACHE PATH "CORE INCLUDE SOURCE PATH"
 )
 
-add_library(core STATIC ${CORE_SRC} ${CORE_INC} "GraphicsLib/Texture2D.cpp" "GraphicsLib/Texture2D.h")
+add_library(core STATIC ${CORE_SRC} ${CORE_INC} "GraphicsLib/Texture2D.cpp" "GraphicsLib/Texture2D.h" "GraphicsLib/Camera.cpp" "GraphicsLib/Camera.h")
 
 find_package(OpenGL REQUIRED)
 
