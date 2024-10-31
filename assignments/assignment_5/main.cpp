@@ -83,6 +83,17 @@ float vertices[] = {
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 };
 
+float planeVertices[] = {
+	// positions            // normals         // texcoords
+		10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+	   -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+	   -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+
+		10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+	   -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+		10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+};
+
 //Max Cube Settings
 const int MAX_CUBES = 30;
 int maxCubeRange = 20;
@@ -117,6 +128,8 @@ struct Transform {
 };
 
 Transform transforms[MAX_CUBES];
+Transform lightTransform;
+
 
 void InstantiateCubes() {
 	//Generate random model matrix values for cubes
@@ -184,10 +197,9 @@ int main() {
 	InstantiateCubes();
 
 	//Create vertex buffer, Element Buffer and vertex array object
-	unsigned int VBO, VAO, EBO;
+	unsigned int VBO, VAO;
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &EBO);
 
 	//Bind Vertex Array
 	glBindVertexArray(VAO);
@@ -195,11 +207,6 @@ int main() {
 	//Bind and Load data into vertex buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	//Bind and Load data in element buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//Link position attributes
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)0);
@@ -210,16 +217,35 @@ int main() {
 	//Link UV attributes
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(1);
-	
+
+	//Light Source
+	unsigned int lampVAO;
+	glGenVertexArrays(1, &lampVAO);
+	glBindVertexArray(lampVAO);
+
+	// plane VAO
+	unsigned int planeVAO, planeVBO;
+	glGenVertexArrays(1, &planeVAO);
+	glGenBuffers(1, &planeVBO);
+	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+	glBindVertexArray(0);
+
 	//Create shaders
-	GraphicsLib::Shader fishShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	GraphicsLib::Shader lightingShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
+	GraphicsLib::Shader lampShader("assets/Lamp.vert", "assets/Lamp.frag");
 
 	//Create textures
 	GraphicsLib::Texture2D waterTexture("assets/WaterBackground.png", 2, 1);
 	GraphicsLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
 	//Lighting
-	fishShader.setVector3("lightPos", glm::vec3(0.0f, 0.0f, 0.0f));
+	lightTransform.position = glm::vec3(0.0f);
+	lightTransform.scale = glm::vec3(0.5f);
+	lightingShader.setVector3("lightPos", lightTransform.position);
+	lightingShader.setVector3("viewPos", camera.Position);
+	
 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -233,11 +259,11 @@ int main() {
 		lastFrame = timeValue;
 
 		//Clear framebuffer
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
 		//Run Shader program
-		fishShader.use();
+		lightingShader.use();
 
 		//Calculate new projection matrix
 		glm::mat4 projectionMatrix = glm::perspective(glm::radians(camera.Fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
@@ -246,37 +272,47 @@ int main() {
 		glm::mat4 view = camera.GetViewMatrix();
 
 		//Update view models
-		fishShader.setMatrix4("_View", view);
-		fishShader.setMatrix4("_Projection", projectionMatrix);
+		lightingShader.setMatrix4("_View", view);
+		lightingShader.setMatrix4("_Projection", projectionMatrix);
 
 		//Set uniform time to delta time
-		fishShader.setFloat("_Time", deltaTime);
+		lightingShader.setFloat("_Time", deltaTime);
 
 		//Bind Textures
-		fishShader.setInt("fishTexture", 0);
+		lightingShader.setInt("fishTexture", 0);
 		fishTexture.Bind(GL_TEXTURE0);
-		fishShader.setInt("waterTexture", 1);
+		lightingShader.setInt("waterTexture", 1);
 		waterTexture.Bind(GL_TEXTURE1);
-		
-		//Render fish
+		 
 		glBindVertexArray(VAO);
+
 		//Iterate through cube positions and move each to designated position
 		for (unsigned int i = 0; i < MAX_CUBES; i++) {
 			//Translate to cube position
 			transforms[i].position.y += (sin(timeValue) * 2.0f) * deltaTime;
 
-			fishShader.setMatrix4("_Model", transforms[i].getModelMatrix());
-
+			lightingShader.setMatrix4("_Model", transforms[i].getModelMatrix());
+			
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+
+		glBindVertexArray(planeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		lampShader.use();
+		lampShader.setMatrix4("_View", view);
+		lampShader.setMatrix4("_Projection", projectionMatrix);
+		lampShader.setMatrix4("_Model", lightTransform.getModelMatrix());
+		glBindVertexArray(lampVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 		glfwSwapBuffers(window);
 	}
 	printf("Shutting down...");
 
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &lampVAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
-
 	return 0;
 }
 
