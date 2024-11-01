@@ -113,9 +113,8 @@ struct Transform {
 	}
 };
 
-//Transform transforms[MAX_CUBES];
 //Transforms
-Transform cube;
+Transform transforms[MAX_CUBES];
 Transform lightTransform;
 
 //Light Settings
@@ -130,24 +129,24 @@ bool canLook = false;
 
 void InstantiateCubes() {
 	//Generate random model matrix values for cubes
-	/*for (int i = 0; i < MAX_CUBES; i++) {
+	for (int i = 0; i < MAX_CUBES; i++) {
 		transforms[i].position = glm::vec3(ew::RandomRange(0, maxCubeRange), ew::RandomRange(0, maxCubeRange), ew::RandomRange(0, maxCubeRange));
 
 		transforms[i].rotation = glm::vec3(ew::RandomRange(0, 1), ew::RandomRange(0, 1), ew::RandomRange(0, 1));
 
 		transforms[i].scale = glm::vec3(ew::RandomRange(0.5f, maxCubeScale), ew::RandomRange(0.5f, maxCubeScale), ew::RandomRange(0.5f, maxCubeScale));
-	}*/
+	}
 }
 
 void ClearCubes() {
 	//Generate random model matrix values for cubes
-	/*for (int i = 0; i < MAX_CUBES; i++) {
+	for (int i = 0; i < MAX_CUBES; i++) {
 		transforms[i].position = glm::vec3(0, 0, 0);
 
 		transforms[i].rotation = glm::vec3(0, 0, 0);
 
 		transforms[i].scale = glm::vec3(0, 0, 0);
-	}*/
+	}
 }
 
 int main() {
@@ -167,8 +166,6 @@ int main() {
 		return 1;
 	}
 
-	
-  
 	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -219,7 +216,6 @@ int main() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STRIDE * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-
 	//Create shaders
 	GraphicsLib::Shader lightingShader("assets/VertexShader.vert", "assets/FragmentShader.frag");
 	GraphicsLib::Shader lampShader("assets/Lamp.vert", "assets/Lamp.frag");
@@ -229,9 +225,6 @@ int main() {
 	GraphicsLib::Texture2D fishTexture("assets/Edward.png", 1, 1);
 
 	//Lighting
-	cube.position = glm::vec3(2.0f);
-	cube.rotation = glm::vec3(1.0f);
-	cube.scale = glm::vec3(1.0f);
 	lightTransform.position = glm::vec3(1.0f);
 	lightTransform.rotation = glm::vec3(2.0f);
 	lightTransform.scale = glm::vec3(0.4f);
@@ -246,8 +239,6 @@ int main() {
 
 	//Render loop
 	while (!glfwWindowShouldClose(window)) {
-
-
 		processInput(window);
 
 		//Calculate delta time
@@ -294,11 +285,17 @@ int main() {
 		fishTexture.Bind(GL_TEXTURE0);
 		lightingShader.setInt("waterTexture", 1);
 		waterTexture.Bind(GL_TEXTURE1);
-		 
-		lightingShader.setMatrix4("_Model", cube.getModelMatrix());
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		////Iterate through cube positions and move each to designated position
+		for (unsigned int i = 0; i < MAX_CUBES; i++) {
+			//Translate to cube position
+			transforms[i].position.y += (sin(timeValue) * 2.0f) * deltaTime;
+
+			lightingShader.setMatrix4("_Model", transforms[i].getModelMatrix());
+
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		lampShader.use();
 
@@ -308,20 +305,9 @@ int main() {
 		lampShader.setMatrix4("_Projection", projectionMatrix);
 
 		lightTransform.position.y += sin(timeValue * 2.0f) * deltaTime;
-		lightTransform.rotation = cube.position;
 		lampShader.setMatrix4("_Model", lightTransform.getModelMatrix());
 		glBindVertexArray(lampVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		////Iterate through cube positions and move each to designated position
-		//for (unsigned int i = 0; i < MAX_CUBES; i++) {
-		//	//Translate to cube position
-		//	transforms[i].position.y += (sin(timeValue) * 2.0f) * deltaTime;
-
-		//	lightingShader.setMatrix4("_Model", transforms[i].getModelMatrix());
-		//	
-		//	glDrawArrays(GL_TRIANGLES, 0, 36);
-		//}
 
 		//Create a window
 		ImGui::Begin("Lighting Settings");
