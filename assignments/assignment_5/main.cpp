@@ -114,9 +114,17 @@ struct Transform {
 };
 
 //Transform transforms[MAX_CUBES];
+//Transforms
 Transform cube;
 Transform lightTransform;
+
+//Light Settings
 glm::vec3 lightColor = glm::vec3(1.0f);
+float ambientIntensity = 0.3f;
+float diffuseIntensity = 0.0f;
+float specularIntensity = 0.5f;
+float shininessIntensity = 32.0f;
+bool blinnPhong = true;
 
 bool canLook = false;
 
@@ -262,6 +270,11 @@ int main() {
 		lightingShader.setVector3("lightColor", lightColor);
 		lightingShader.setVector3("lightPos", lightTransform.position);
 		lightingShader.setVector3("viewPos", camera.Position);
+		lightingShader.setFloat("ambientStrength", ambientIntensity);
+		lightingShader.setFloat("diffuseStrength", diffuseIntensity);
+		lightingShader.setFloat("specularStrength", specularIntensity);
+		lightingShader.setFloat("shininess", shininessIntensity);
+		lightingShader.setBool("blinnPhong", blinnPhong);
 
 		//Calculate new projection matrix
 		glm::mat4 projectionMatrix = glm::perspective(glm::radians(camera.Fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
@@ -316,6 +329,11 @@ int main() {
 
 		ImGui::DragFloat3("Light Position", &lightTransform.position.x);
 		ImGui::ColorEdit3("Light Color", &lightColor.r);
+		ImGui::SliderFloat("AmbientK", &ambientIntensity, 0, 1);
+		ImGui::SliderFloat("DiffuseK", &diffuseIntensity, 0, 1);
+		ImGui::SliderFloat("SpecularK", &specularIntensity, 0, 1);
+		ImGui::SliderFloat("Shininess", &shininessIntensity, 2, 1024);
+		ImGui::Checkbox("Blinn-Phong", &blinnPhong);
 		ImGui::End();
 
 		//Render
